@@ -17,9 +17,13 @@ This is a sample project I created that anyone can use to preview a FBX 3D model
 
 ## Demos
 
-| App Demo                                                                | Viewport Render                                                                                                    |
-| ------------------------------------------------------------------------| ------------------------------------------------------------------------------------------------------------------ |
-[![App Demo](public/sample/Demo-Playbutton.png)](public/sample/Demo.mp4)  | [![Render Demo](public/sample/animation_1748111403873-Playbutton.png)](public/sample/animation_1748111403873.webm) |
+### App Demo
+
+[App Demo](https://github.com/user-attachments/assets/4600349a-d794-4c29-96f7-9d162f0351a5)
+
+### Viewport Render
+
+[Viewport Render](https://github.com/user-attachments/assets/2329a52e-3c18-402d-b920-d5a5e4d36f75)
 
 ## Dev
 
