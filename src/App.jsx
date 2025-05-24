@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Scene3D from './components/Scene3D';
 import FileUpload from './components/FileUpload';
 import AnimationControls from './components/AnimationControls';
 import LightingControls from './components/LightingControls';
+import TimelineControls from './components/TimelineControls';
 import { useVideoRecorder } from './hooks/useVideoRecorder';
 import { Gamepad2, Cpu, Zap } from 'lucide-react';
 
@@ -16,6 +17,10 @@ function App() {
   const [canvasElement, setCanvasElement] = useState(null);
   const [lightingType, setLightingType] = useState('studio');
   const [countdown, setCountdown] = useState(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [animationDuration, setAnimationDuration] = useState(0);
+  const [comments, setComments] = useState([]);
+  const timeUpdateRef = useRef(null);
 
   const { startRecording } = useVideoRecorder();
 
@@ -53,6 +58,75 @@ function App() {
   const handleAnimationChange = (animationName) => {
     setCurrentAnimation(animationName);
     setIsPlaying(true);
+    setCurrentTime(0);
+    setComments([]);
+  };
+
+  const handlePlayPause = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  const handleTimeChange = (time) => {
+    setCurrentTime(time);
+    setIsPlaying(false);
+  };
+
+  const handleTimeUpdate = useCallback((time) => {
+    if (timeUpdateRef.current) {
+      cancelAnimationFrame(timeUpdateRef.current);
+    }
+    
+    timeUpdateRef.current = requestAnimationFrame(() => {
+      setCurrentTime(time);
+    });
+  }, []);
+
+  const handleDurationChange = useCallback((duration) => {
+    setAnimationDuration(duration);
+  }, []);
+
+  const handleAddComment = (frame, text) => {
+    const newComment = {
+      id: Date.now(),
+      frame,
+      text,
+      animation: currentAnimation,
+      timestamp: new Date().toISOString()
+    };
+    setComments(prev => [...prev, newComment]);
+  };
+
+  const handleUpdateComment = (id, text) => {
+    setComments(prev => prev.map(comment => 
+      comment.id === id ? { ...comment, text } : comment
+    ));
+  };
+
+  const handleDeleteComment = (id) => {
+    setComments(prev => prev.filter(comment => comment.id !== id));
+  };
+
+  const handleImportComments = (data) => {
+    if (Array.isArray(data.comments)) {
+      setComments(data.comments);
+    }
+  };
+
+  const handleExportComments = () => {
+    const exportData = {
+      animation: currentAnimation,
+      duration: animationDuration,
+      comments: comments,
+      exportDate: new Date().toISOString()
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${currentAnimation || 'animation'}_comments.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleLightingChange = (lighting) => {
@@ -92,10 +166,10 @@ function App() {
     setCanvasElement(canvas);
   };
 
-  const handleModelLoad = (model, animations) => {
+  const handleModelLoad = useCallback((model, animations) => {
     console.log('Model loaded:', model);
     console.log('Built-in animations:', animations);
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
@@ -113,7 +187,7 @@ function App() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           <div className="lg:col-span-2">
-            <div className="bg-gray-800/50 rounded-xl p-8 border border-gray-700 shadow-2xl" style={{ padding: "10px" }}>
+            <div className="bg-gray-800/50 rounded-xl p-8 border border-gray-700 shadow-2xl" style={{ padding: "10px", marginBottom: "10px" }}>
               <h2 className="text-xl font-semibold mb-4 text-cyan-400">3D Viewport</h2>
               <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden">
                 {modelUrl ? (
@@ -124,6 +198,10 @@ function App() {
                     onModelLoad={handleModelLoad}
                     onCanvasReady={handleCanvasReady}
                     lightingType={lightingType}
+                    isPlaying={isPlaying}
+                    currentTime={currentTime}
+                    onTimeUpdate={handleTimeUpdate}
+                    onDurationChange={handleDurationChange}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-500">
@@ -148,6 +226,22 @@ function App() {
                 </div>
               </div>
             </div>
+
+            <TimelineControls
+              isPlaying={isPlaying}
+              onPlayPause={handlePlayPause}
+              currentTime={currentTime}
+              duration={animationDuration}
+              onTimeChange={handleTimeChange}
+              comments={comments}
+              onAddComment={handleAddComment}
+              onUpdateComment={handleUpdateComment}
+              onDeleteComment={handleDeleteComment}
+              onImportComments={handleImportComments}
+              onExportComments={handleExportComments}
+              currentAnimation={currentAnimation}
+            />
+
           </div>
 
           <div className="space-y-8">

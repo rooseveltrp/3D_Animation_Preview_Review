@@ -31,11 +31,13 @@ function CameraController({ model }) {
   return null;
 }
 
-function FBXModel({ url, animations, currentAnimation, onLoadComplete }) {
+function FBXModel({ url, animations, currentAnimation, onLoadComplete, isPlaying, currentTime, onTimeUpdate, onDurationChange }) {
   const meshRef = useRef();
   const mixerRef = useRef();
   const [model, setModel] = useState(null);
   const [loadedAnimations, setLoadedAnimations] = useState([]);
+  const [animationDuration, setAnimationDuration] = useState(0);
+  const currentActionRef = useRef();
 
   useEffect(() => {
     if (!url) return;
@@ -100,21 +102,51 @@ function FBXModel({ url, animations, currentAnimation, onLoadComplete }) {
           newAction.reset();
           newAction.fadeIn(0.2);
           newAction.play();
+          
+          currentActionRef.current = newAction;
+          const duration = animFbx.animations[0].duration;
+          setAnimationDuration(duration);
+          
+          if (onDurationChange) {
+            onDurationChange(duration);
+          }
+          
+          newAction.paused = !isPlaying;
         }
       }
     );
   }, [currentAnimation, animations, loadedAnimations]);
 
+  useEffect(() => {
+    if (currentActionRef.current) {
+      currentActionRef.current.paused = !isPlaying;
+    }
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (currentActionRef.current && typeof currentTime === 'number') {
+      const action = currentActionRef.current;
+      action.time = currentTime;
+      mixerRef.current.update(0);
+    }
+  }, [currentTime]);
+
   useFrame((state, delta) => {
     if (mixerRef.current) {
-      mixerRef.current.update(delta);
+      if (isPlaying) {
+        mixerRef.current.update(delta);
+      }
+      
+      if (currentActionRef.current && onTimeUpdate) {
+        onTimeUpdate(currentActionRef.current.time);
+      }
     }
   });
 
   return model ? <primitive ref={meshRef} object={model} /> : null;
 }
 
-function Scene3D({ modelUrl, animations, currentAnimation, onModelLoad, onCanvasReady, lightingType = 'studio' }) {
+function Scene3D({ modelUrl, animations, currentAnimation, onModelLoad, onCanvasReady, lightingType = 'studio', isPlaying = true, currentTime, onTimeUpdate, onDurationChange }) {
   const canvasRef = useRef();
   const controlsRef = useRef();
   const [loadedModel, setLoadedModel] = useState(null);
@@ -249,6 +281,10 @@ function Scene3D({ modelUrl, animations, currentAnimation, onModelLoad, onCanvas
               animations={animations}
               currentAnimation={currentAnimation}
               onLoadComplete={handleModelLoad}
+              isPlaying={isPlaying}
+              currentTime={currentTime}
+              onTimeUpdate={onTimeUpdate}
+              onDurationChange={onDurationChange}
             />
           </Center>
           

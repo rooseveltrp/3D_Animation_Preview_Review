@@ -1,0 +1,28 @@
+{
+  "animation": "anim_run",
+  "duration": 0.7333333492279053,
+  "comments": [
+    {
+      "id": 1748111478371,
+      "frame": 5,
+      "text": "Increase arm spacing.",
+      "animation": "anim_run",
+      "timestamp": "2025-05-24T18:31:18.371Z"
+    },
+    {
+      "id": 1748111551567,
+      "frame": 14,
+      "text": "Make it lean more towards the front.",
+      "animation": "anim_run",
+      "timestamp": "2025-05-24T18:32:31.567Z"
+    },
+    {
+      "id": 1748111600629,
+      "frame": 73,
+      "text": "Add an in-between pose.",
+      "animation": "anim_run",
+      "timestamp": "2025-05-24T18:33:20.629Z"
+    }
+  ],
+  "exportDate": "2025-05-24T18:33:23.684Z"
+}
